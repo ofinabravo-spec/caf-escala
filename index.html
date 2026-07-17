@@ -2,8 +2,10 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Escala do Café</title>
+
+<script src="https://code.dragdroptouch.com/DragDropTouch.js"></script>
 
 <style>
 *{
@@ -11,32 +13,73 @@
     padding:0;
     box-sizing:border-box;
     font-family:Arial, sans-serif;
+    -webkit-user-select: none;
+    user-select: none;
 }
 
 body{
     background:#f4f6f9;
-    padding:20px;
+    overflow-x: hidden; /* Impede rolagem lateral desalinhada */
+}
+
+/* Indicador visual de qual tela está ativa */
+.tabs-indicator {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    padding: 15px 0 5px 0;
+    background: #fff;
+}
+
+.dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #cbd5e1;
+    transition: background 0.3s;
+}
+
+.dot.active {
+    background: #3498db;
+    width: 20px;
+    border-radius: 5px;
+}
+
+/* Container do Carrossel de Telas */
+.carousel-view {
+    width: 100vw;
+    overflow: hidden;
+}
+
+.carousel-container {
+    display: flex;
+    width: 200vw; /* Duas telas de largura */
+    transition: transform 0.3s ease-out;
+}
+
+/* Cada tela individual ocupa exatamente 100% da largura do celular */
+.screen {
+    width: 100vw;
+    padding: 15px;
+    flex-shrink: 0;
+    min-height: 85vh;
 }
 
 h1{
     text-align:center;
-    margin-bottom:20px;
+    margin-bottom:15px;
     color:#2c3e50;
-}
-
-.container{
-    display:grid;
-    grid-template-columns:2fr 1fr;
-    gap:20px;
+    font-size: 22px;
 }
 
 .card{
     background:#fff;
     border-radius:12px;
-    padding:20px;
+    padding:15px;
     box-shadow:0 4px 10px rgba(0,0,0,.08);
     display:flex;
     flex-direction:column;
+    height: 100%;
 }
 
 .input-area{
@@ -47,64 +90,66 @@ h1{
 
 input{
     flex:1;
-    padding:10px;
+    padding:12px;
     border:1px solid #ccc;
     border-radius:8px;
+    font-size: 16px;
+    -webkit-user-select: text;
+    user-select: text;
 }
 
 button{
-    padding:10px 15px;
+    padding:12px 15px;
     border:none;
     border-radius:8px;
     background:#27ae60;
     color:white;
-    cursor:pointer;
-}
-
-button:hover{
-    background:#219150;
+    font-weight: bold;
 }
 
 .day{
     border:2px dashed #dcdde1;
     border-radius:10px;
-    padding:15px;
+    padding:12px;
     margin-bottom:10px;
     background:white;
+    min-height: 70px;
 }
 
 .day-title{
     font-weight:bold;
-    margin-bottom:8px;
+    margin-bottom:6px;
     color:#34495e;
+    font-size: 14px;
 }
 
 .person{
     background:#3498db;
     color:white;
-    padding:10px;
+    padding:12px;
     border-radius:8px;
     cursor:grab;
     text-align:center;
+    font-weight: bold;
+    touch-action: none; 
 }
 
 .person:active{
     cursor:grabbing;
+    opacity: 0.7;
 }
 
 .queue{
-    min-height:200px;
+    min-height:180px;
     border:2px dashed #dcdde1;
     border-radius:10px;
     padding:10px;
     margin-bottom:15px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
 }
 
-.queue .person{
-    margin-bottom:8px;
-}
-
-/* Estilo da área de apagar */
 .trash-zone {
     border: 2px dashed #e74c3c;
     background: #fdf2f2;
@@ -113,8 +158,7 @@ button:hover{
     padding: 20px;
     text-align: center;
     font-weight: bold;
-    cursor: pointer;
-    transition: background 0.2s;
+    margin-top: auto;
 }
 
 .trash-zone.dragover {
@@ -127,87 +171,132 @@ button:hover{
 }
 
 .empty{
-    color:#999;
+    color:#94a3b8;
     text-align:center;
-    padding:10px;
+    padding:8px;
+    font-style: italic;
+    font-size: 14px;
 }
 
-@media(max-width:900px){
-    .container{
-        grid-template-columns:1fr;
-    }
+.hint-swipe {
+    text-align: center;
+    font-size: 12px;
+    color: #94a3b8;
+    margin-top: 5px;
 }
 </style>
 </head>
 <body>
 
-<h1>☕ Escala do Café</h1>
-
-<div class="container">
-
-    <div class="card">
-        <h2>Semana</h2>
-        <br>
-
-        <div class="day" data-index="0">
-            <div class="day-title">Segunda</div>
-            <div class="slot"></div>
-        </div>
-
-        <div class="day" data-index="1">
-            <div class="day-title">Terça</div>
-            <div class="slot"></div>
-        </div>
-
-        <div class="day" data-index="2">
-            <div class="day-title">Quarta</div>
-            <div class="slot"></div>
-        </div>
-
-        <div class="day" data-index="3">
-            <div class="day-title">Quinta</div>
-            <div class="slot"></div>
-        </div>
-
-        <div class="day" data-index="4">
-            <div class="day-title">Sexta</div>
-            <div class="slot"></div>
-        </div>
-
-        <div class="day" data-index="5">
-            <div class="day-title">Sábado</div>
-            <div class="slot"></div>
-        </div>
+    <div class="tabs-indicator">
+        <div id="dot0" class="dot active"></div>
+        <div id="dot1" class="dot"></div>
     </div>
 
-    <div class="card">
-        <h2>Fila</h2>
-        <br>
+    <h1>☕ Escala do Café</h1>
 
-        <div class="input-area">
-            <input
-                id="newName"
-                placeholder="Novo funcionário"
-            >
-            <button onclick="addPerson()">
-                Adicionar
-            </button>
-        </div>
+    <div class="carousel-view" id="touchArea">
+        <div class="carousel-container" id="carousel">
+            
+            <div class="screen">
+                <div class="card">
+                    <h2>Semana</h2>
+                    <div class="hint-swipe">Arraste para a esquerda ➔ para ver a Fila</div>
+                    <br>
 
-        <div id="queue" class="queue"></div>
+                    <div class="day" data-index="0">
+                        <div class="day-title">Segunda</div>
+                        <div class="slot"></div>
+                    </div>
 
-        <div id="trashZone" class="trash-zone">
-            🗑️ Arraste aqui para Apagar
+                    <div class="day" data-index="1">
+                        <div class="day-title">Terça</div>
+                        <div class="slot"></div>
+                    </div>
+
+                    <div class="day" data-index="2">
+                        <div class="day-title">Quarta</div>
+                        <div class="slot"></div>
+                    </div>
+
+                    <div class="day" data-index="3">
+                        <div class="day-title">Quinta</div>
+                        <div class="slot"></div>
+                    </div>
+
+                    <div class="day" data-index="4">
+                        <div class="day-title">Sexta</div>
+                        <div class="slot"></div>
+                    </div>
+
+                    <div class="day" data-index="5">
+                        <div class="day-title">Sábado</div>
+                        <div class="slot"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="screen">
+                <div class="card">
+                    <h2>Fila de Espera</h2>
+                    <div class="hint-swipe">🡠 Arraste para a direita para ver a Semana</div>
+                    
+                    <div class="input-area">
+                        <input id="newName" placeholder="Novo funcionário">
+                        <button onclick="addPerson()">Adicionar</button>
+                    </div>
+
+                    <div id="queue" class="queue"></div>
+
+                    <div id="trashZone" class="trash-zone">
+                        🗑️ Arraste aqui para Apagar
+                    </div>
+                </div>
+            </div>
+
         </div>
     </div>
-
-</div>
 
 <script>
-// Carrega os dados do navegador
+// --- LÓGICA DO SWIPE (PASSAR O DEDO) ---
+let startX = 0;
+let currentScreen = 0;
+const carousel = document.getElementById("carousel");
+const touchArea = document.getElementById("touchArea");
+
+touchArea.addEventListener("touchstart", e => {
+    // Não ativa o swipe se o usuário estiver arrastando um funcionário (.person)
+    if (e.target.classList.contains("person")) return;
+    startX = e.touches[0].clientX;
+}, { passive: true });
+
+touchArea.addEventListener("touchend", e => {
+    if (startX === 0) return;
+    let endX = e.changedTouches[0].clientX;
+    let diffX = startX - endX;
+
+    // Detecta se o movimento foi longo o suficiente para passar a tela
+    if (Math.abs(diffX) > 60) {
+        if (diffX > 0 && currentScreen === 0) {
+            currentScreen = 1; // Vai para a fila
+        } else if (diffX < 0 && currentScreen === 1) {
+            currentScreen = 0; // Volta para a semana
+        }
+        updateScreenView();
+    }
+    startX = 0;
+});
+
+function updateScreenView() {
+    carousel.style.transform = `translateX(-${currentScreen * 100}vw)`;
+    document.getElementById("dot0").classList.toggle("active", currentScreen === 0);
+    document.getElementById("dot1").classList.toggle("active", currentScreen === 1);
+}
+
+
+// --- TODO O SEU JAVASCRIPT ORIGINAL DE CONTROLE ---
 let employees = JSON.parse(localStorage.getItem("cafeFila")) || [];
 
-// Salva a lista na memória do navegador
 function save(){
     localStorage.setItem("cafeFila", JSON.stringify(employees));
 }
@@ -215,21 +304,13 @@ function save(){
 function addPerson(){
     const input = document.getElementById("newName");
     const name = input.value.trim();
-
     if(!name) return;
 
-    const exists = employees.some(
-        p => p && p.toLowerCase() === name.toLowerCase()
-    );
-
-    if(exists){
-        alert("Nome já cadastrado.");
-        return;
-    }
+    const exists = employees.some(p => p && p.toLowerCase() === name.toLowerCase());
+    if(exists){ alert("Nome já cadastrado."); return; }
 
     employees.push(name);
     input.value = "";
-
     save();
     render();
 }
@@ -240,11 +321,9 @@ function createPerson(name, index){
     div.draggable = true;
     div.dataset.index = index;
     div.textContent = name;
-
     div.addEventListener("dragstart", e => {
         e.dataTransfer.setData("text/plain", index);
     });
-
     return div;
 }
 
@@ -255,7 +334,6 @@ function render(){
 
     for(let i=0; i<6; i++){
         const slot = document.querySelector(`.day[data-index="${i}"] .slot`);
-
         if(employees[i]){
             slot.appendChild(createPerson(employees[i], i));
         } else {
@@ -274,93 +352,53 @@ function render(){
     }
 }
 
-// Drag and Drop nos dias da semana
 document.querySelectorAll(".day").forEach(day => {
     day.addEventListener("dragover", e => e.preventDefault());
     day.addEventListener("drop", e => {
         e.preventDefault();
         const from = Number(e.dataTransfer.getData("text/plain"));
         const to = Number(day.dataset.index);
-
-        if (employees[to] === undefined) {
-            employees[to] = null;
-        }
-
+        if (employees[to] === undefined) employees[to] = null;
         [employees[from], employees[to]] = [employees[to], employees[from]];
-        
-        limparPontasNulas();
-        save();
-        render();
+        limparPontasNulas(); save(); render();
     });
 });
 
-// Drag and Drop de volta para a fila
 document.getElementById("queue").addEventListener("dragover", e => e.preventDefault());
 document.getElementById("queue").addEventListener("drop", e => {
     e.preventDefault();
     const from = Number(e.dataTransfer.getData("text/plain"));
-
     if(from < 6){
         const item = employees.splice(from, 1)[0];
         employees.splice(from, 0, null);
         employees.push(item);
-        
-        limparPontasNulas();
-        save();
-        render();
+        limparPontasNulas(); save(); render();
     }
 });
 
-// Configuração da Lixeira (Apagar Nomes)
 const trashZone = document.getElementById("trashZone");
-
-trashZone.addEventListener("dragover", e => {
-    e.preventDefault();
-    trashZone.classList.add("dragover");
-});
-
-trashZone.addEventListener("dragleave", () => {
-    trashZone.classList.remove("dragover");
-});
-
+trashZone.addEventListener("dragover", e => { e.preventDefault(); trashZone.classList.add("dragover"); });
+trashZone.addEventListener("dragleave", () => trashZone.classList.remove("dragover"));
 trashZone.addEventListener("drop", e => {
     e.preventDefault();
     trashZone.classList.remove("dragover");
-    
     const from = Number(e.dataTransfer.getData("text/plain"));
-    
-    if (from < 6) {
-        // Se estava nos dias da semana, vira Vazio
-        employees[from] = null;
-    } else {
-        // Se estava na fila, remove permanentemente
-        employees.splice(from, 1);
-    }
-
-    limparPontasNulas();
-    save();
-    render();
+    if (from < 6) employees[from] = null;
+    else employees.splice(from, 1);
+    limparPontasNulas(); save(); render();
 });
 
 function limparPontasNulas() {
-    while(employees.length > 0 && employees[employees.length - 1] === null) {
-        employees.pop();
-    }
+    while(employees.length > 0 && employees[employees.length - 1] === null) employees.pop();
 }
 
 document.getElementById("newName").addEventListener("keypress", e => {
-    if(e.key === "Enter"){
-        addPerson();
-    }
+    if(e.key === "Enter") addPerson();
 });
 
-// Destacar o dia atual automaticamente
 const today = new Date().getDay();
 const map = { 1:0, 2:1, 3:2, 4:3, 5:4, 6:5 };
-
-if(map[today] !== undefined){
-    document.querySelector(`.day[data-index="${map[today]}"]`).classList.add("today");
-}
+if(map[today] !== undefined) document.querySelector(`.day[data-index="${map[today]}"]`).classList.add("today");
 
 render();
 </script>
