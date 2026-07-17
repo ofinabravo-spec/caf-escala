@@ -19,10 +19,9 @@
 
 body{
     background:#f4f6f9;
-    overflow-x: hidden; /* Impede rolagem lateral desalinhada */
+    overflow-x: hidden;
 }
 
-/* Indicador visual de qual tela está ativa */
 .tabs-indicator {
     display: flex;
     justify-content: center;
@@ -45,7 +44,6 @@ body{
     border-radius: 5px;
 }
 
-/* Container do Carrossel de Telas */
 .carousel-view {
     width: 100vw;
     overflow: hidden;
@@ -53,11 +51,10 @@ body{
 
 .carousel-container {
     display: flex;
-    width: 200vw; /* Duas telas de largura */
+    width: 200vw;
     transition: transform 0.3s ease-out;
 }
 
-/* Cada tela individual ocupa exatamente 100% da largura do celular */
 .screen {
     width: 100vw;
     padding: 15px;
@@ -258,14 +255,12 @@ button{
     </div>
 
 <script>
-// --- LÓGICA DO SWIPE (PASSAR O DEDO) ---
 let startX = 0;
 let currentScreen = 0;
 const carousel = document.getElementById("carousel");
 const touchArea = document.getElementById("touchArea");
 
 touchArea.addEventListener("touchstart", e => {
-    // Não ativa o swipe se o usuário estiver arrastando um funcionário (.person)
     if (e.target.classList.contains("person")) return;
     startX = e.touches[0].clientX;
 }, { passive: true });
@@ -275,12 +270,11 @@ touchArea.addEventListener("touchend", e => {
     let endX = e.changedTouches[0].clientX;
     let diffX = startX - endX;
 
-    // Detecta se o movimento foi longo o suficiente para passar a tela
     if (Math.abs(diffX) > 60) {
         if (diffX > 0 && currentScreen === 0) {
-            currentScreen = 1; // Vai para a fila
+            currentScreen = 1;
         } else if (diffX < 0 && currentScreen === 1) {
-            currentScreen = 0; // Volta para a semana
+            currentScreen = 0;
         }
         updateScreenView();
     }
@@ -293,8 +287,6 @@ function updateScreenView() {
     document.getElementById("dot1").classList.toggle("active", currentScreen === 1);
 }
 
-
-// --- TODO O SEU JAVASCRIPT ORIGINAL DE CONTROLE ---
 let employees = JSON.parse(localStorage.getItem("cafeFila")) || [];
 
 function save(){
@@ -364,16 +356,23 @@ document.querySelectorAll(".day").forEach(day => {
     });
 });
 
+// MODIFICADO: Agora a fila aceita drops organizados e troca de posições perfeitamente
 document.getElementById("queue").addEventListener("dragover", e => e.preventDefault());
 document.getElementById("queue").addEventListener("drop", e => {
     e.preventDefault();
     const from = Number(e.dataTransfer.getData("text/plain"));
+    
+    // Se veio da semana (0 a 5), retira deixando nulo e joga pro fim da fila
     if(from < 6){
         const item = employees.splice(from, 1)[0];
         employees.splice(from, 0, null);
         employees.push(item);
-        limparPontasNulas(); save(); render();
+    } else {
+        // Se já estava na fila, joga para o final da fila para reordenar
+        const item = employees.splice(from, 1)[0];
+        employees.push(item);
     }
+    limparPontasNulas(); save(); render();
 });
 
 const trashZone = document.getElementById("trashZone");
@@ -383,8 +382,13 @@ trashZone.addEventListener("drop", e => {
     e.preventDefault();
     trashZone.classList.remove("dragover");
     const from = Number(e.dataTransfer.getData("text/plain"));
-    if (from < 6) employees[from] = null;
-    else employees.splice(from, 1);
+    
+    // Remove o funcionário vindo de QUALQUER lugar (semana ou fila)
+    if (from < 6) {
+        employees[from] = null;
+    } else {
+        employees.splice(from, 1);
+    }
     limparPontasNulas(); save(); render();
 });
 
