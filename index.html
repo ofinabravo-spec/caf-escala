@@ -22,6 +22,7 @@ body{
     overflow-x: hidden;
 }
 
+/* Indicador visual de qual tela está ativa (as bolinhas) */
 .tabs-indicator {
     display: flex;
     justify-content: center;
@@ -44,6 +45,7 @@ body{
     border-radius: 5px;
 }
 
+/* Container do Carrossel de Telas */
 .carousel-view {
     width: 100vw;
     overflow: hidden;
@@ -51,10 +53,11 @@ body{
 
 .carousel-container {
     display: flex;
-    width: 200vw;
+    width: 200vw; /* Duas telas de largura (Semana e Fila) */
     transition: transform 0.3s ease-out;
 }
 
+/* Cada tela individual ocupa exatamente 100% da largura do celular */
 .screen {
     width: 100vw;
     padding: 15px;
@@ -120,7 +123,7 @@ button{
     font-size: 14px;
 }
 
-.person{
+.person {
     background:#3498db;
     color:white;
     padding:12px;
@@ -255,26 +258,30 @@ button{
     </div>
 
 <script>
+// --- LÓGICA DO SWIPE INTEGRADA COM O DRAG (MUDAR DE TELA ARRSTANDO) ---
 let startX = 0;
 let currentScreen = 0;
 const carousel = document.getElementById("carousel");
 const touchArea = document.getElementById("touchArea");
 
+// Captura o início do toque (funciona tanto na tela lisa quanto segurando um funcionário)
 touchArea.addEventListener("touchstart", e => {
-    if (e.target.classList.contains("person")) return;
     startX = e.touches[0].clientX;
 }, { passive: true });
 
+// Captura o final do movimento para decidir se troca a tela
 touchArea.addEventListener("touchend", e => {
     if (startX === 0) return;
+    
     let endX = e.changedTouches[0].clientX;
     let diffX = startX - endX;
 
+    // Se arrastou mais de 60 pixels para os lados, executa a troca de tela lisa ou com bloco junto
     if (Math.abs(diffX) > 60) {
         if (diffX > 0 && currentScreen === 0) {
-            currentScreen = 1;
+            currentScreen = 1; // Vai para a fila
         } else if (diffX < 0 && currentScreen === 1) {
-            currentScreen = 0;
+            currentScreen = 0; // Volta para a semana
         }
         updateScreenView();
     }
@@ -287,6 +294,7 @@ function updateScreenView() {
     document.getElementById("dot1").classList.toggle("active", currentScreen === 1);
 }
 
+// --- LÓGICA DO SISTEMA DA ESCALA DO CAFÉ ---
 let employees = JSON.parse(localStorage.getItem("cafeFila")) || [];
 
 function save(){
@@ -324,6 +332,7 @@ function render(){
     const queue = document.getElementById("queue");
     queue.innerHTML="";
 
+    // Renderiza os dias da semana (posições de 0 a 5)
     for(let i=0; i<6; i++){
         const slot = document.querySelector(`.day[data-index="${i}"] .slot`);
         if(employees[i]){
@@ -333,6 +342,7 @@ function render(){
         }
     }
 
+    // Renderiza a fila de espera (posições de 6 em diante)
     for(let i=6; i<employees.length; i++){
         if (employees[i]) {
             queue.appendChild(createPerson(employees[i], i));
@@ -344,6 +354,7 @@ function render(){
     }
 }
 
+// Eventos de Drop nos dias da Semana
 document.querySelectorAll(".day").forEach(day => {
     day.addEventListener("dragover", e => e.preventDefault());
     day.addEventListener("drop", e => {
@@ -356,25 +367,26 @@ document.querySelectorAll(".day").forEach(day => {
     });
 });
 
-// MODIFICADO: Agora a fila aceita drops organizados e troca de posições perfeitamente
+// Eventos de Drop dentro da Fila de Espera (Permite reordenar a fila e receber novos)
 document.getElementById("queue").addEventListener("dragover", e => e.preventDefault());
 document.getElementById("queue").addEventListener("drop", e => {
     e.preventDefault();
     const from = Number(e.dataTransfer.getData("text/plain"));
     
-    // Se veio da semana (0 a 5), retira deixando nulo e joga pro fim da fila
     if(from < 6){
+        // Se veio dos dias da semana, deixa a vaga vazia (null) e empurra o funcionário para a fila
         const item = employees.splice(from, 1)[0];
         employees.splice(from, 0, null);
         employees.push(item);
     } else {
-        // Se já estava na fila, joga para o final da fila para reordenar
+        // Se já estava na fila, move o item tirando do lugar antigo e jogando no final para reordenação
         const item = employees.splice(from, 1)[0];
         employees.push(item);
     }
     limparPontasNulas(); save(); render();
 });
 
+// Eventos da Lixeira (Apaga itens vindos de qualquer posição)
 const trashZone = document.getElementById("trashZone");
 trashZone.addEventListener("dragover", e => { e.preventDefault(); trashZone.classList.add("dragover"); });
 trashZone.addEventListener("dragleave", () => trashZone.classList.remove("dragover"));
@@ -383,11 +395,10 @@ trashZone.addEventListener("drop", e => {
     trashZone.classList.remove("dragover");
     const from = Number(e.dataTransfer.getData("text/plain"));
     
-    // Remove o funcionário vindo de QUALQUER lugar (semana ou fila)
     if (from < 6) {
-        employees[from] = null;
+        employees[from] = null; // Se veio da semana, esvazia o dia
     } else {
-        employees.splice(from, 1);
+        employees.splice(from, 1); // Se veio da fila, corta da lista definitivo
     }
     limparPontasNulas(); save(); render();
 });
@@ -400,6 +411,7 @@ document.getElementById("newName").addEventListener("keypress", e => {
     if(e.key === "Enter") addPerson();
 });
 
+// Destacar o dia atual da semana
 const today = new Date().getDay();
 const map = { 1:0, 2:1, 3:2, 4:3, 5:4, 6:5 };
 if(map[today] !== undefined) document.querySelector(`.day[data-index="${map[today]}"]`).classList.add("today");
