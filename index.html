@@ -155,10 +155,10 @@ button{
     background: #fdf2f2;
     color: #e74c3c;
     border-radius: 10px;
-    padding: 20px;
+    padding: 16px;
     text-align: center;
     font-weight: bold;
-    margin-top: auto;
+    margin-top: 10px; /* Margem para separar do sábado ou da fila */
 }
 
 .trash-zone.dragover {
@@ -201,7 +201,7 @@ button{
             <div class="screen">
                 <div class="card">
                     <h2>Semana</h2>
-                    <div class="hint-swipe">Arraste para os lados para mudar / para baixo para apagar</div>
+                    <div class="hint-swipe">Arraste para os lados para mudar de tela</div>
                     <br>
 
                     <div class="day" data-index="0">
@@ -233,13 +233,17 @@ button{
                         <div class="day-title">Sábado</div>
                         <div class="slot"></div>
                     </div>
+
+                    <div class="trash-zone meuTrashZone">
+                        🗑️ Arraste aqui para Apagar
+                    </div>
                 </div>
             </div>
 
             <div class="screen">
                 <div class="card">
                     <h2>Fila de Espera</h2>
-                    <div class="hint-swipe">Arraste para baixo para apagar o funcionário</div>
+                    <div class="hint-swipe">Arraste para os lados para mudar de tela</div>
                     
                     <div class="input-area">
                         <input id="newName" placeholder="Novo funcionário">
@@ -248,8 +252,8 @@ button{
 
                     <div id="queue" class="queue"></div>
 
-                    <div id="trashZone" class="trash-zone">
-                        🗑️ Ou solte aqui para Apagar
+                    <div class="trash-zone meuTrashZone">
+                        🗑️ Arraste aqui para Apagar
                     </div>
                 </div>
             </div>
@@ -258,58 +262,31 @@ button{
     </div>
 
 <script>
-// --- LÓGICA DO SWIPE E DRAG DOWN (MUDAR TELA OU APAGAR) ---
+// --- LÓGICA DO SWIPE DE TELAS ---
 let startX = 0;
-let startY = 0; // Adicionado para rastrear o movimento vertical
 let currentScreen = 0;
-let draggedItemIndex = null; // Guarda quem está sendo arrastado atualmente
-
 const carousel = document.getElementById("carousel");
 const touchArea = document.getElementById("touchArea");
 
 touchArea.addEventListener("touchstart", e => {
-    startX = e.touches[0].clientX;
-    startY = e.touches[0].clientY;
-
-    // Se o usuário tocou em um bloco de funcionário, memoriza o índice dele
     if (e.target.classList.contains("person")) {
-        draggedItemIndex = Number(e.target.dataset.index);
-    } else {
-        draggedItemIndex = null;
+        startX = 0;
+        return;
     }
+    startX = e.touches[0].clientX;
 }, { passive: true });
 
 touchArea.addEventListener("touchend", e => {
-    if (startX === 0 || startY === 0) return;
-    
+    if (startX === 0) return;
     let endX = e.changedTouches[0].clientX;
-    let endY = e.changedTouches[0].clientY;
-    
     let diffX = startX - endX;
-    let diffY = startY - endY;
 
-    // NOVO: Se o movimento para baixo for maior que 100px E o usuário estava segurando um funcionário, EXCLUI!
-    if (diffY < -100 && draggedItemIndex !== null) {
-        excluirFuncionario(draggedItemIndex);
-        startX = 0;
-        startY = 0;
-        draggedItemIndex = null;
-        return;
-    }
-
-    // Se não foi arrasto para baixo, verifica se foi arrasto lateral para mudar de tela
-    if (Math.abs(diffX) > 60 && Math.abs(diffX) > Math.abs(diffY)) {
-        if (diffX > 0 && currentScreen === 0) {
-            currentScreen = 1; 
-        } else if (diffX < 0 && currentScreen === 1) {
-            currentScreen = 0; 
-        }
+    if (Math.abs(diffX) > 60) {
+        if (diffX > 0 && currentScreen === 0) currentScreen = 1; 
+        else if (diffX < 0 && currentScreen === 1) currentScreen = 0; 
         updateScreenView();
     }
-    
     startX = 0;
-    startY = 0;
-    draggedItemIndex = null;
 });
 
 function updateScreenView() {
@@ -318,20 +295,9 @@ function updateScreenView() {
     document.getElementById("dot1").classList.toggle("active", currentScreen === 1);
 }
 
-// Função centralizada para deletar o funcionário
-function excluirFuncionario(index) {
-    if (index < 6) {
-        employees[index] = null; // Esvazia o dia da semana
-    } else {
-        employees.splice(index, 1); // Remove definitivo da fila
-    }
-    limparPontasNulas(); 
-    save(); 
-    render();
-}
-
-// --- LÓGICA DO SISTEMA DA ESCALA DO CAFÉ ---
+// --- LÓGICA CENTRAL DO SISTEMA ---
 let employees = JSON.parse(localStorage.getItem("cafeFila")) || [];
+let dragStartY = 0;
 
 function save(){
     localStorage.setItem("cafeFila", JSON.stringify(employees));
@@ -357,10 +323,34 @@ function createPerson(name, index){
     div.draggable = true;
     div.dataset.index = index;
     div.textContent = name;
+
     div.addEventListener("dragstart", e => {
         e.dataTransfer.setData("text/plain", index);
+        dragStartY = e.clientY || (e.touches ? e.touches[0].clientY : 0);
     });
+
+    div.addEventListener("dragend", e => {
+        let dragEndY = e.clientY || (e.changedTouches ? e.changedTouches[0].clientY : 0);
+        let diffY = dragEndY - dragStartY;
+
+        // Se o movimento final foi muito para baixo (mais de 130px), remove também
+        if (diffY > 130) {
+            excluirFuncionario(index);
+        }
+    });
+
     return div;
+}
+
+function excluirFuncionario(index) {
+    if (index < 6) {
+        employees[index] = null;
+    } else {
+        employees.splice(index, 1);
+    }
+    limparPontasNulas(); 
+    save(); 
+    render();
 }
 
 function render(){
@@ -395,6 +385,9 @@ document.querySelectorAll(".day").forEach(day => {
         e.preventDefault();
         const from = Number(e.dataTransfer.getData("text/plain"));
         const to = Number(day.dataset.index);
+        
+        if(from === to) return;
+        
         if (employees[to] === undefined) employees[to] = null;
         [employees[from], employees[to]] = [employees[to], employees[from]];
         limparPontasNulas(); save(); render();
@@ -418,15 +411,16 @@ document.getElementById("queue").addEventListener("drop", e => {
     limparPontasNulas(); save(); render();
 });
 
-// Eventos tradicionais da Lixeira por Drop clássico
-const trashZone = document.getElementById("trashZone");
-trashZone.addEventListener("dragover", e => { e.preventDefault(); trashZone.classList.add("dragover"); });
-trashZone.addEventListener("dragleave", () => trashZone.classList.remove("dragover"));
-trashZone.addEventListener("drop", e => {
-    e.preventDefault();
-    trashZone.classList.remove("dragover");
-    const from = Number(e.dataTransfer.getData("text/plain"));
-    excluirFuncionario(from);
+// Eventos aplicados a AMBAS as lixeiras do app automaticamente
+document.querySelectorAll(".meuTrashZone").forEach(trashZone => {
+    trashZone.addEventListener("dragover", e => { e.preventDefault(); trashZone.classList.add("dragover"); });
+    trashZone.addEventListener("dragleave", () => trashZone.classList.remove("dragover"));
+    trashZone.addEventListener("drop", e => {
+        e.preventDefault();
+        trashZone.classList.remove("dragover");
+        const from = Number(e.dataTransfer.getData("text/plain"));
+        excluirFuncionario(from);
+    });
 });
 
 function limparPontasNulas() {
